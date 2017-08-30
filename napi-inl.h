@@ -654,14 +654,18 @@ struct vf_fallback {
   }
 };
 
+template <typename...> struct disjunction : std::false_type {};
+template <typename B> struct disjunction<B> : B {};
+template <typename B, typename... Bs>
+struct disjunction<B, Bs...>
+    : std::conditional<bool(B::value), B, disjunction<Bs...>>::type {};
+
 template <typename T>
-struct can_make_string {
-  static constexpr bool value =
-      std::is_convertible<T, const char*>::value ||
-      std::is_convertible<T, const char16_t*>::value ||
-      std::is_convertible<T, std::string>::value ||
-      std::is_convertible<T, std::u16string>::value;
-};
+struct can_make_string
+    : disjunction<typename std::is_convertible<T, const char *>::type,
+                  typename std::is_convertible<T, const char16_t *>::type,
+                  typename std::is_convertible<T, std::string>::type,
+                  typename std::is_convertible<T, std::u16string>::type> {};
 }
 
 template <typename T>
